@@ -1,7 +1,7 @@
 # XPipe Python API
 
-[![GitHub license](https://img.shields.io/github/license/xpipe-io/xpipe-python-api.svg)](https://github.com/coandco/python_xpipe_client/blob/master/LICENSE)
-[![PyPI version](https://img.shields.io/pypi/v/xpipe_client)](https://pypi.org/project/xpipe_client/)
+[![GitHub license](https://img.shields.io/github/license/xpipe-io/xpipe-python-api.svg)](https://github.com/coandco/python_xpipe_api/blob/master/LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/xpipe_api)](https://pypi.org/project/xpipe_api/)
 
 Python client for the XPipe API. This library is a wrapper for the raw [HTTP API](https://github.com/xpipe-io/xpipe/blob/master/openapi.yaml) and intended to make working with it more convenient.
 
@@ -13,7 +13,7 @@ python3 -m pip install xpipe_api
 ## Usage
 
 ```python
-from xpipe_client import Client
+from xpipe_api import Client
 
 # By default, Client() will read an access key from the file xpipe_auth on the local filesystem
 # and talk to the XPipe HTTP server on localhost.  To connect to a remote instance with an API
@@ -37,9 +37,10 @@ client.shell_stop(first_connection_uuid)
 ```
 
 There's also an async version of the client that can be accessed as AsyncClient:
+
 ```python
 import asyncio
-from xpipe_client import AsyncClient
+from xpipe_api import AsyncClient
 
 
 async def main():
@@ -50,16 +51,16 @@ async def main():
 
     # connection_query accepts glob-based filters on the category, connection name, and connection type
     all_connections = await client.connection_query()
-    
+
     # Each connection includes uuid, category, connection, and type information
     first_connection_uuid = all_connections[0]["uuid"]
-    
+
     # Before any shell commands can be run, a shell session must be started on a connection
     await client.shell_start(first_connection_uuid)
-    
+
     # Prints {'exitCode': 0, 'stdout': 'hello world', 'stderr': ''}
     print(await client.shell_exec(first_connection_uuid, "echo hello world"))
-    
+
     # Clean up after ourselves by stopping the shell session
     await client.shell_stop(first_connection_uuid)
 
@@ -76,7 +77,7 @@ To run the test suite, you'll need to define the XPIPE_APIKEY env var.  This wil
 rather than Local method" tests to work.  Here's the recommended method for running the tests with poetry:
 
 ```commandline
-cd /path/to/python_xpipe_client
+cd /path/to/python_xpipe_api
 poetry install
 XPIPE_APIKEY=<api_key> poetry run pytest
 ```

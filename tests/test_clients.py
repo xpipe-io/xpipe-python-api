@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from aiohttp.client_exceptions import ClientResponseError
 from requests.exceptions import HTTPError
-from xpipe_client.clients import AsyncClient, Client
+from xpipe_api.clients import AsyncClient, Client
 
 
 @pytest.fixture
@@ -79,26 +79,26 @@ async def test_async_connection_info(async_local_client: AsyncClient):
 
 def test_connection_add_remove(sync_local_client: Client):
     local_conn = sync_local_client.connection_query(connections="local machine")[0]
-    if response := sync_local_client.connection_query(connections="services/xpipe_client_test"):
+    if response := sync_local_client.connection_query(connections="services/xpipe_api_test"):
         sync_local_client.connection_remove(response[0])
-        assert not sync_local_client.connection_query(connections="services/xpipe_client_test")
+        assert not sync_local_client.connection_query(connections="services/xpipe_api_test")
     conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}}
-    test_uuid = sync_local_client.connection_add("xpipe_client_test", conn_data)
-    assert sync_local_client.connection_query(connections="services/xpipe_client_test")
+    test_uuid = sync_local_client.connection_add("xpipe_api_test", conn_data)
+    assert sync_local_client.connection_query(connections="services/xpipe_api_test")
     sync_local_client.connection_remove(test_uuid)
-    assert not sync_local_client.connection_query(connections="services/xpipe_client_test")
+    assert not sync_local_client.connection_query(connections="services/xpipe_api_test")
 
 
 async def test_async_connection_add_remove(async_local_client: AsyncClient):
     local_conn = (await async_local_client.connection_query(connections="local machine"))[0]
-    if response := (await async_local_client.connection_query(connections="services/xpipe_client_test")):
+    if response := (await async_local_client.connection_query(connections="services/xpipe_api_test")):
         await async_local_client.connection_remove(response[0])
-        assert not (await async_local_client.connection_query(connections="services/xpipe_client_test"))
+        assert not (await async_local_client.connection_query(connections="services/xpipe_api_test"))
     conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}}
-    test_uuid = await async_local_client.connection_add("xpipe_client_test", conn_data)
-    assert (await async_local_client.connection_query(connections="services/xpipe_client_test"))
+    test_uuid = await async_local_client.connection_add("xpipe_api_test", conn_data)
+    assert (await async_local_client.connection_query(connections="services/xpipe_api_test"))
     await async_local_client.connection_remove(test_uuid)
-    assert not (await async_local_client.connection_query(connections="services/xpipe_client_test"))
+    assert not (await async_local_client.connection_query(connections="services/xpipe_api_test"))
 
 
 def test_connection_browse(sync_local_client: Client):
@@ -136,7 +136,7 @@ async def test_async_connection_terminal(async_local_client: AsyncClient):
 def test_connection_toggle(sync_local_client: Client):
     local_conn = sync_local_client.connection_query(connections="local machine")[0]
     conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}}
-    conn_uuid = sync_local_client.connection_add(name="xpipe_client_test", conn_data=conn_data)
+    conn_uuid = sync_local_client.connection_add(name="xpipe_api_test", conn_data=conn_data)
     sync_local_client.connection_toggle(conn_uuid, True)
     assert sync_local_client.connection_info(conn_uuid)[0]["cache"]["sessionEnabled"]
     sync_local_client.connection_toggle(conn_uuid, False)
@@ -147,7 +147,7 @@ def test_connection_toggle(sync_local_client: Client):
 async def test_sync_connection_toggle(async_local_client: AsyncClient):
     local_conn = (await async_local_client.connection_query(connections="local machine"))[0]
     conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}}
-    conn_uuid = await async_local_client.connection_add(name="xpipe_client_test", conn_data=conn_data)
+    conn_uuid = await async_local_client.connection_add(name="xpipe_api_test", conn_data=conn_data)
     await async_local_client.connection_toggle(conn_uuid, True)
     assert (await async_local_client.connection_info(conn_uuid))[0]["cache"]["sessionEnabled"]
     await async_local_client.connection_toggle(conn_uuid, False)

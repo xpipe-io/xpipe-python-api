@@ -51,7 +51,7 @@ class Client:
             auth = {"type": self.auth_type, "key": self.token}
         else:
             auth = {"type": self.auth_type, "authFileContent": self.token}
-        data = {"auth": auth, "client": {"type": "Api", "name": "python_xpipe_client"}}
+        data = {"auth": auth, "client": {"type": "Api", "name": "python_xpipe_api"}}
         result = requests.post(f"{self.base_url}/handshake", json=data)
         response = result.json()
         session = response.get("sessionToken", None)
@@ -61,7 +61,7 @@ class Client:
             raise AuthFailedException(json.dumps(response))
         assert (
             Version(self.daemon_version()["version"]) >= self.min_version
-        ), f"xpipe_client requires XPipe of at least {self.min_version}"
+        ), f"xpipe_api requires XPipe of at least {self.min_version}"
 
     def _post(self, *args, **kwargs) -> requests.Response:
         if not self.session:
@@ -230,7 +230,7 @@ class AsyncClient(Client):
             auth = {"type": self.auth_type, "key": self.token}
         else:
             auth = {"type": self.auth_type, "authFileContent": self.token}
-        data = {"auth": auth, "client": {"type": "Api", "name": "python_xpipe_client"}}
+        data = {"auth": auth, "client": {"type": "Api", "name": "python_xpipe_api"}}
 
         resp = await async_requests.post(f"{self.base_url}/handshake", json=data)
         parsed = await resp.json(content_type=None)
@@ -241,7 +241,7 @@ class AsyncClient(Client):
             raise AuthFailedException(json.dumps(parsed))
         assert (
             Version((await self.daemon_version())["version"]) >= self.min_version
-        ), f"xpipe_client requires XPipe of at least {self.min_version}"
+        ), f"xpipe_api requires XPipe of at least {self.min_version}"
 
     async def _post(self, *args, **kwargs) -> aiohttp.ClientResponse:
         if not self.session:

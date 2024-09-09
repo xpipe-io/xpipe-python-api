@@ -192,14 +192,14 @@ async def test_async_daemon_version(async_local_client: AsyncClient):
 def test_shell_start(sync_local_client: Client):
     local_connection = sync_local_client.connection_query(connections="local machine")[0]
     response = sync_local_client.shell_start(local_connection)
-    assert set(response.keys()) == {"shellDialect", "osType", "osName", "temp"}
+    assert set(response.keys()) == {"shellDialect", "osType", "osName", "ttyState", "temp"}
 
 
 async def test_async_shell_start(async_local_client: AsyncClient):
     connections = await async_local_client.connection_query(connections="local machine")
     local_connection = connections[0]
     response = await async_local_client.shell_start(local_connection)
-    assert set(response.keys()) == {"shellDialect", "osType", "osName", "temp"}
+    assert set(response.keys()) == {"shellDialect", "osType", "osName", "ttyState", "temp"}
 
 
 def test_shell_stop(sync_local_client: Client):

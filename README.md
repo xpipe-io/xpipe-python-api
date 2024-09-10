@@ -1,6 +1,6 @@
 # XPipe Python API
 
-[![GitHub license](https://img.shields.io/github/license/xpipe-io/xpipe-python-api.svg)](https://github.com/coandco/python_xpipe_api/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/xpipe-io/xpipe-python-api.svg)](https://github.com/xpipe-io/xpipe-python-api/blob/master/LICENSE)
 [![PyPI version](https://img.shields.io/pypi/v/xpipe_api)](https://pypi.org/project/xpipe_api/)
 
 Python client for the XPipe API. This library is a wrapper for the raw [HTTP API](https://github.com/xpipe-io/xpipe/blob/master/openapi.yaml) and intended to make working with it more convenient.
@@ -42,7 +42,6 @@ There's also an async version of the client that can be accessed as AsyncClient:
 import asyncio
 from xpipe_api import AsyncClient
 
-
 async def main():
     # By default, Client() will read an access key from the file xpipe_auth on the local filesystem
     # and talk to the XPipe HTTP server on localhost.  To connect to a remote instance with an API
@@ -77,7 +76,7 @@ To run the test suite, you'll need to define the XPIPE_APIKEY env var.  This wil
 rather than Local method" tests to work.  Here's the recommended method for running the tests with poetry:
 
 ```commandline
-cd /path/to/python_xpipe_api
+cd /path/to/xpipe-python-api
 poetry install
 XPIPE_APIKEY=<api_key> poetry run pytest
 ```

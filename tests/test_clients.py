@@ -79,64 +79,81 @@ async def test_async_connection_info(async_local_client: AsyncClient):
 
 def test_connection_add_remove(sync_local_client: Client):
     local_conn = sync_local_client.connection_query(connections="local machine")[0]
-    if response := sync_local_client.connection_query(connections="services/xpipe_api_test"):
+    if response := sync_local_client.connection_query(connections="local machine/services/xpipe_api_test"):
         sync_local_client.connection_remove(response[0])
-        assert not sync_local_client.connection_query(connections="services/xpipe_api_test")
+        assert not sync_local_client.connection_query(connections="local machine/services/xpipe_api_test")
     conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}, "serviceProtocolType" : {
         "type" : "http",
         "path" : None
     }}
     test_uuid = sync_local_client.connection_add("xpipe_api_test", conn_data)
-    assert sync_local_client.connection_query(connections="services/xpipe_api_test")
+    assert sync_local_client.connection_query(connections="local machine/services/xpipe_api_test")
     sync_local_client.connection_remove(test_uuid)
-    assert not sync_local_client.connection_query(connections="services/xpipe_api_test")
+    assert not sync_local_client.connection_query(connections="local machine/services/xpipe_api_test")
 
+def test_category_add_remove(sync_local_client: Client):
+    root = sync_local_client.category_query(category_filter="all connections")[0]
+    added = sync_local_client.category_add(name="test", parent=root)
+    found = sync_local_client.category_query(category_filter="all connections/test")[0]
+    assert added == found
+    info = sync_local_client.category_info(found)[0]
+    assert info.get("name") == ["all connections", "test"]
+    sync_local_client.category_remove(uuids=info.get("category"), remove_children_categories=False, remove_contents=False)
+    assert len(sync_local_client.category_query(category_filter="all connections/test")) == 0
+
+async def test_async_category_add_remove(async_local_client: AsyncClient):
+    root = (await async_local_client.category_query(category_filter="all connections"))[0]
+    added = await async_local_client.category_add(name="test", parent=root)
+    found = (await async_local_client.category_query(category_filter="all connections/test"))[0]
+    assert added == found
+    info = (await async_local_client.category_info(found))[0]
+    assert info.get("name") == ["all connections", "test"]
+    await async_local_client.category_remove(uuids=info.get("category"), remove_children_categories=False, remove_contents=False)
+    assert len(await async_local_client.category_query(category_filter="all connections/test")) == 0
+
+def test_secret_encrypt_decrypt(sync_local_client: Client):
+    secret = "123"
+    encrypted = sync_local_client.secret_encrypt(secret)
+    decrypted = sync_local_client.secret_decrypt(encrypted)
+    assert decrypted == secret
+
+async def test_async_secret_encrypt_decrypt(async_local_client: AsyncClient):
+    secret = "123"
+    encrypted = await async_local_client.secret_encrypt(secret)
+    decrypted = await async_local_client.secret_decrypt(encrypted)
+    assert decrypted == secret
 
 async def test_async_connection_add_remove(async_local_client: AsyncClient):
     local_conn = (await async_local_client.connection_query(connections="local machine"))[0]
-    if response := (await async_local_client.connection_query(connections="services/xpipe_api_test")):
+    if response := (await async_local_client.connection_query(connections="local machine/services/xpipe_api_test")):
         await async_local_client.connection_remove(response[0])
-        assert not (await async_local_client.connection_query(connections="services/xpipe_api_test"))
+        assert not (await async_local_client.connection_query(connections="local machine/services/xpipe_api_test"))
     conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}, "serviceProtocolType" : {
         "type" : "http",
         "path" : None
     }}
     test_uuid = await async_local_client.connection_add("xpipe_api_test", conn_data)
-    assert (await async_local_client.connection_query(connections="services/xpipe_api_test"))
+    assert (await async_local_client.connection_query(connections="local machine/services/xpipe_api_test"))
     await async_local_client.connection_remove(test_uuid)
-    assert not (await async_local_client.connection_query(connections="services/xpipe_api_test"))
+    assert not (await async_local_client.connection_query(connections="local machine/services/xpipe_api_test"))
 
 
-def test_connection_browse(sync_local_client: Client):
-    # We don't want to actually cause the GUI to change, so we're just going to test that it
-    # throws the proper exception when passed a bad connection UUID
-    fake_conn = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
-    with pytest.raises(HTTPError, match="Unknown connection"):
-        sync_local_client.connection_browse(fake_conn)
+def test_action(sync_local_client: Client):
+    conn = 'f0ec68aa-63f5-405c-b178-9a4454556d6b'
+    data = {
+        "ref": conn,
+        "id": "launch"
+    }
+    sync_local_client.action(data, False)
 
 
-async def test_async_connection_browse(async_local_client: AsyncClient):
-    # We don't want to actually cause the GUI to change, so we're just going to test that it
-    # throws the proper exception when passed a bad connection UUID
-    fake_conn = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
-    with pytest.raises(ClientResponseError, match="Unknown connection"):
-        await async_local_client.connection_browse(fake_conn)
-
-
-def test_connection_terminal(sync_local_client: Client):
-    # We don't want to actually cause the GUI to change, so we're just going to test that it
-    # throws the proper exception when passed a bad connection UUID
-    fake_conn = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
-    with pytest.raises(HTTPError, match="Unknown connection"):
-        sync_local_client.connection_terminal(fake_conn)
-
-
-async def test_async_connection_terminal(async_local_client: AsyncClient):
-    # We don't want to actually cause the GUI to change, so we're just going to test that it
-    # throws the proper exception when passed a bad connection UUID
-    fake_conn = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
-    with pytest.raises(ClientResponseError, match="Unknown connection"):
-        await async_local_client.connection_terminal(fake_conn)
+async def test_async_action(async_local_client: AsyncClient):
+    conn = 'f0ec68aa-63f5-405c-b178-9a4454556d6b'
+    data = {
+        "ref": conn,
+        "id": "launch"
+    }
+    await async_local_client.action(data, False)
 
 
 def test_connection_toggle(sync_local_client: Client):
@@ -146,10 +163,8 @@ def test_connection_toggle(sync_local_client: Client):
         "path" : None
     }}
     conn_uuid = sync_local_client.connection_add(name="xpipe_api_test", conn_data=conn_data)
-    sync_local_client.connection_toggle(conn_uuid, True)
-    assert sync_local_client.connection_info(conn_uuid)[0]["cache"]["sessionEnabled"]
-    sync_local_client.connection_toggle(conn_uuid, False)
-    assert not sync_local_client.connection_info(conn_uuid)[0]["cache"]["sessionEnabled"]
+    sync_local_client.action({"id": "toggleStore", "enabled": True, "ref": conn_uuid}, False)
+    sync_local_client.action({"id": "toggleStore", "enabled": False, "ref": conn_uuid}, False)
     sync_local_client.connection_remove(conn_uuid)
 
 
@@ -160,10 +175,8 @@ async def test_sync_connection_toggle(async_local_client: AsyncClient):
         "path" : None
     }}
     conn_uuid = await async_local_client.connection_add(name="xpipe_api_test", conn_data=conn_data)
-    await async_local_client.connection_toggle(conn_uuid, True)
-    assert (await async_local_client.connection_info(conn_uuid))[0]["cache"]["sessionEnabled"]
-    await async_local_client.connection_toggle(conn_uuid, False)
-    assert not (await async_local_client.connection_info(conn_uuid))[0]["cache"]["sessionEnabled"]
+    await async_local_client.action({"id": "toggleStore", "enabled": True, "ref": conn_uuid}, False)
+    await async_local_client.action({"id": "toggleStore", "enabled": False, "ref": conn_uuid}, False)
     await async_local_client.connection_remove(conn_uuid)
 
 
@@ -193,12 +206,12 @@ async def test_async_get_connections(async_local_client: AsyncClient):
 
 def test_daemon_version(sync_local_client: Client):
     version_info = sync_local_client.daemon_version()
-    assert set(version_info.keys()) == {"version", "canonicalVersion", "buildVersion", "pro", "jvmVersion"}
+    assert set(version_info.keys()) == {"version", "canonicalVersion", "buildVersion", "plan", "jvmVersion"}
 
 
 async def test_async_daemon_version(async_local_client: AsyncClient):
     version_info = await async_local_client.daemon_version()
-    assert set(version_info.keys()) == {"version", "canonicalVersion", "buildVersion", "pro", "jvmVersion"}
+    assert set(version_info.keys()) == {"version", "canonicalVersion", "buildVersion", "plan", "jvmVersion"}
 
 
 def test_shell_start(sync_local_client: Client):

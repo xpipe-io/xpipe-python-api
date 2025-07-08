@@ -19,7 +19,7 @@ class Client:
     base_url: str
     raise_errors: bool
     session: Optional[str] = None
-    min_version: Version = Version("15.2")
+    min_version: Version = Version("17.0")
 
     def __init__(
         self, token: Optional[str] = None, base_url: Optional[str] = None, ptb: bool = False, raise_errors: bool = True
@@ -139,30 +139,33 @@ class Client:
         response = self.post(endpoint, json=data)
         return json.loads(response)["category"]
 
+    def category_query(self, category_filter: str = "**") -> List[str]:
+        endpoint = f"{self.base_url}/category/query"
+        data = {"filter": category_filter}
+        response = self.post(endpoint, json=data)
+        return json.loads(response).get("found", [])
+
+    def category_info(self, uuids: Union[str, List[str]]) -> List[dict]:
+        endpoint = f"{self.base_url}/category/info"
+        # If we're passed a single UUID, wrap it in a list like the API expects
+        if not isinstance(uuids, list):
+            uuids = [uuids]
+        data = {"categories": uuids}
+        response = self.post(endpoint, json=data)
+        return json.loads(response).get("infos", [])
+
+    def category_remove(self, uuids: Union[str, List[str]], remove_children_categories: bool, remove_contents: bool):
+        endpoint = f"{self.base_url}/category/remove"
+        if not isinstance(uuids, list):
+            uuids = [uuids]
+        data = {"categories": uuids, "removeChildrenCategories": remove_children_categories, "removeContents": remove_contents}
+        self.post(endpoint, json=data)
+
     def connection_remove(self, uuids: Union[str, List[str]]):
         endpoint = f"{self.base_url}/connection/remove"
         if not isinstance(uuids, list):
             uuids = [uuids]
         data = {"connections": uuids}
-        self.post(endpoint, json=data)
-
-    def connection_browse(self, connection: str, directory: Optional[str] = None):
-        endpoint = f"{self.base_url}/connection/browse"
-        data = {"connection": connection}
-        if directory:
-            data["directory"] = directory
-        self.post(endpoint, json=data)
-
-    def connection_terminal(self, connection: str, directory: Optional[str] = None):
-        endpoint = f"{self.base_url}/connection/terminal"
-        data = {"connection": connection}
-        if directory:
-            data["directory"] = directory
-        self.post(endpoint, json=data)
-
-    def connection_toggle(self, connection: str, state: bool):
-        endpoint = f"{self.base_url}/connection/toggle"
-        data = {"connection": connection, "state": state}
         self.post(endpoint, json=data)
 
     def connection_refresh(self, connection: str):
@@ -225,6 +228,20 @@ class Client:
     def fs_read(self, connection: str, path: str) -> bytes:
         return self._fs_read(connection, path).content
 
+    def action(self, action_data: dict, confirm: bool):
+        endpoint = f"{self.base_url}/action"
+        data = {"action": action_data, "confirm": confirm}
+        self.post(endpoint, json=data)
+
+    def secret_encrypt(self, secret: str):
+        endpoint = f"{self.base_url}/secret/encrypt"
+        data = {"value": secret}
+        return json.loads(self.post(endpoint, json=data))["encrypted"]
+
+    def secret_decrypt(self, encrypted: dict):
+        endpoint = f"{self.base_url}/secret/decrypt"
+        data = {"encrypted": encrypted}
+        return json.loads(self.post(endpoint, json=data))["decrypted"]
 
 class AsyncClient(Client):
     @classmethod
@@ -341,30 +358,33 @@ class AsyncClient(Client):
         response = await self.post(endpoint, json=data)
         return json.loads(response)["category"]
 
+    async def category_query(self, category_filter: str = "**") -> List[str]:
+        endpoint = f"{self.base_url}/category/query"
+        data = {"filter": category_filter}
+        response = await self.post(endpoint, json=data)
+        return json.loads(response).get("found", [])
+
+    async def category_info(self, uuids: Union[str, List[str]]) -> List[dict]:
+        endpoint = f"{self.base_url}/category/info"
+        # If we're passed a single UUID, wrap it in a list like the API expects
+        if not isinstance(uuids, list):
+            uuids = [uuids]
+        data = {"categories": uuids}
+        response = await self.post(endpoint, json=data)
+        return json.loads(response).get("infos", [])
+
+    async def category_remove(self, uuids: Union[str, List[str]], remove_children_categories: bool, remove_contents: bool):
+        endpoint = f"{self.base_url}/category/remove"
+        if not isinstance(uuids, list):
+            uuids = [uuids]
+        data = {"categories": uuids, "removeChildrenCategories": remove_children_categories, "removeContents": remove_contents}
+        await self.post(endpoint, json=data)
+
     async def connection_remove(self, uuids: Union[str, List[str]]):
         endpoint = f"{self.base_url}/connection/remove"
         if not isinstance(uuids, list):
             uuids = [uuids]
         data = {"connections": uuids}
-        await self.post(endpoint, json=data)
-
-    async def connection_browse(self, connection: str, directory: Optional[str] = None):
-        endpoint = f"{self.base_url}/connection/browse"
-        data = {"connection": connection}
-        if directory:
-            data["directory"] = directory
-        await self.post(endpoint, json=data)
-
-    async def connection_terminal(self, connection: str, directory: Optional[str] = None):
-        endpoint = f"{self.base_url}/connection/terminal"
-        data = {"connection": connection}
-        if directory:
-            data["directory"] = directory
-        await self.post(endpoint, json=data)
-
-    async def connection_toggle(self, connection: str, state: bool):
-        endpoint = f"{self.base_url}/connection/toggle"
-        data = {"connection": connection, "state": state}
         await self.post(endpoint, json=data)
 
     async def connection_refresh(self, connection: str):
@@ -427,3 +447,19 @@ class AsyncClient(Client):
     async def fs_read(self, connection: str, path: str) -> bytes:
         resp = await self._fs_read(connection, path)
         return await resp.read()
+
+    async def action(self, action_data: dict, confirm: bool):
+        endpoint = f"{self.base_url}/action"
+        data = {"action": action_data, "confirm": confirm}
+        response = await self.post(endpoint, json=data)
+        return response
+
+    async def secret_encrypt(self, secret: str):
+        endpoint = f"{self.base_url}/secret/encrypt"
+        data = {"value": secret}
+        return json.loads(await self.post(endpoint, json=data))["encrypted"]
+
+    async def secret_decrypt(self, encrypted: dict):
+        endpoint = f"{self.base_url}/secret/decrypt"
+        data = {"encrypted": encrypted}
+        return json.loads(await self.post(endpoint, json=data))["decrypted"]

@@ -38,8 +38,12 @@ class Client:
             except Exception as e:
                 raise NoTokenFoundException(f"No auth provided and couldn't load xpipe_auth: {e!r}. Is the XPipe daemon running?")
 
+        port = int(os.environ.get('XPIPE_BEACON_PORT', "21721"))
+        if ptb:
+            port = port + 1
+
         if not base_url:
-            base_url = "http://127.0.0.1:21722" if ptb else "http://127.0.0.1:21721"
+            base_url = "http://127.0.0.1:" + str(port) if ptb else "http://127.0.0.1:" + str(port)
 
         self.token = token
         self.auth_type = auth_type

@@ -3,6 +3,7 @@ import os
 from contextlib import suppress
 from pathlib import Path
 from typing import BinaryIO, List, Optional, Union
+from sys import platform
 
 import aiohttp.web_response
 import requests
@@ -29,9 +30,9 @@ class Client:
         if not token:
             try:
                 auth_type = "Local"
-                auth_filename = "xpipe_ptb_auth" if ptb else "xpipe_auth"
+                auth_dir = "xpipe_ptb" if ptb else "xpipe"
                 # Look for Windows or Mac env vars for tmpdir, fall back to /tmp if they don't exist
-                auth_file = Path(os.getenv("TEMP") or os.getenv("TMPDIR") or "/tmp") / auth_filename
+                auth_file = Path(os.getenv("TEMP") or os.getenv("TMPDIR") or "/tmp") / auth_dir / os.getenv("USER") / "beacon-auth" if platform == "linux" else Path(os.getenv("TEMP") or os.getenv("TMPDIR") or "/tmp") / auth_dir / "beacon-auth"
                 token = auth_file.read_text().strip()
             except PermissionError:
                 raise NoTokenFoundException("Bad permissions on xpipe_auth: is the daemon running as another user?")

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xpipe_api"
-version = "0.1.30"
+version = "0.1.31"
 description = "Client for the XPipe API"
 authors = ["Clint Olson <coandco@gmail.com>", "Christopher Schnick <crschnick@xpipe.io>"]
 repository = "https://github.com/xpipe-io/xpipe-python-api"

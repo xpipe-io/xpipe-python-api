@@ -30,7 +30,7 @@ class Client:
         if not token:
             try:
                 auth_type = "Local"
-                auth_dir = "xpipe_ptb" if ptb else "xpipe"
+                auth_dir = "xpipe-ptb" if ptb else "xpipe"
                 # Look for Windows or Mac env vars for tmpdir, fall back to /tmp if they don't exist
                 auth_file = Path(os.getenv("TEMP") or os.getenv("TMPDIR") or "/tmp") / auth_dir / os.getenv("USER") / "beacon-auth" if platform == "linux" else Path(os.getenv("TEMP") or os.getenv("TMPDIR") or "/tmp") / auth_dir / "beacon-auth"
                 token = auth_file.read_text().strip()

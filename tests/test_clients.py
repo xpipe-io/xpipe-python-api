@@ -51,45 +51,45 @@ async def test_async_apikey_login():
     assert client.session is not None
 
 
-def test_connection_query(sync_local_client: Client):
-    connections = sync_local_client.connection_query(connections="local machine")
-    assert len(connections) > 0, "No connections returned"
-    assert len(connections[0]) == 36, "Connection returned is not a UUID"
+def test_store_query(sync_local_client: Client):
+    stores = sync_local_client.store_query(stores="local machine")
+    assert len(stores) > 0, "No stores returned"
+    assert len(stores[0]) == 36, "Store returned is not a UUID"
 
 
-async def test_async_connection_query(async_local_client: AsyncClient):
-    connections = await async_local_client.connection_query(connections="local machine")
-    assert len(connections) > 0, "No connections returned"
-    assert len(connections[0]) == 36, "Connection returned is not a UUID"
+async def test_async_store_query(async_local_client: AsyncClient):
+    stores = await async_local_client.store_query(stores="local machine")
+    assert len(stores) > 0, "No stores returned"
+    assert len(stores[0]) == 36, "Store returned is not a UUID"
 
 
-def test_connection_info(sync_local_client: Client):
-    local_connection = sync_local_client.connection_query(connections="local machine")[0]
-    local_info = sync_local_client.connection_info(local_connection)[0]
+def test_store_info(sync_local_client: Client):
+    local_store = sync_local_client.store_query(stores="local machine")[0]
+    local_info = sync_local_client.store_info(local_store)[0]
     assert local_info["type"] == "local"
     assert local_info["usageCategory"] == "shell"
 
 
-async def test_async_connection_info(async_local_client: AsyncClient):
-    local_connection = (await async_local_client.connection_query(connections="local machine"))[0]
-    local_info = (await async_local_client.connection_info(local_connection))[0]
+async def test_async_store_info(async_local_client: AsyncClient):
+    local_store = (await async_local_client.store_query(stores="local machine"))[0]
+    local_info = (await async_local_client.store_info(local_store))[0]
     assert local_info["type"] == "local"
     assert local_info["usageCategory"] == "shell"
 
 
-def test_connection_add_remove(sync_local_client: Client):
-    local_conn = sync_local_client.connection_query(connections="local machine")[0]
-    if response := sync_local_client.connection_query(connections="local machine/services/xpipe_api_test"):
-        sync_local_client.connection_remove(response[0])
-        assert not sync_local_client.connection_query(connections="local machine/services/xpipe_api_test")
-    conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}, "serviceProtocolType" : {
+def test_store_add_remove(sync_local_client: Client):
+    local_conn = sync_local_client.store_query(stores="local machine")[0]
+    if response := sync_local_client.store_query(stores="local machine/services/xpipe_api_test"):
+        sync_local_client.store_remove(response[0])
+        assert not sync_local_client.store_query(stores="local machine/services/xpipe_api_test")
+    conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": local_conn, "serviceProtocolType" : {
         "type" : "http",
         "path" : None
     }}
-    test_uuid = sync_local_client.connection_add("xpipe_api_test", conn_data)
-    assert sync_local_client.connection_query(connections="local machine/services/xpipe_api_test")
-    sync_local_client.connection_remove(test_uuid)
-    assert not sync_local_client.connection_query(connections="local machine/services/xpipe_api_test")
+    test_uuid = sync_local_client.store_add("xpipe_api_test", conn_data)
+    assert sync_local_client.store_query(stores="local machine/services/xpipe_api_test")
+    sync_local_client.store_remove(test_uuid)
+    assert not sync_local_client.store_query(stores="local machine/services/xpipe_api_test")
 
 def test_category_add_remove(sync_local_client: Client):
     root = sync_local_client.category_query(category_filter="all connections")[0]
@@ -113,36 +113,48 @@ async def test_async_category_add_remove(async_local_client: AsyncClient):
 
 def test_secret_encrypt_decrypt(sync_local_client: Client):
     secret = "123"
-    encrypted = sync_local_client.secret_encrypt(secret)
+    encrypted = sync_local_client.secret_encrypt(secret, [])
+    decrypted = sync_local_client.secret_decrypt(encrypted)
+    assert decrypted == secret
+
+def test_secret_encrypt_decrypt_principal(sync_local_client: Client):
+    secret = "123"
+    encrypted = sync_local_client.secret_encrypt(secret, ["be815152-05d2-4094-84d3-f0eea9200d5f"])
     decrypted = sync_local_client.secret_decrypt(encrypted)
     assert decrypted == secret
 
 async def test_async_secret_encrypt_decrypt(async_local_client: AsyncClient):
     secret = "123"
-    encrypted = await async_local_client.secret_encrypt(secret)
+    encrypted = await async_local_client.secret_encrypt(secret, [])
     decrypted = await async_local_client.secret_decrypt(encrypted)
     assert decrypted == secret
 
-async def test_async_connection_add_remove(async_local_client: AsyncClient):
-    local_conn = (await async_local_client.connection_query(connections="local machine"))[0]
-    if response := (await async_local_client.connection_query(connections="local machine/services/xpipe_api_test")):
-        await async_local_client.connection_remove(response[0])
-        assert not (await async_local_client.connection_query(connections="local machine/services/xpipe_api_test"))
-    conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}, "serviceProtocolType" : {
+async def test_async_secret_encrypt_decrypt_principal(async_local_client: AsyncClient):
+    secret = "123"
+    encrypted = await async_local_client.secret_encrypt(secret, ["be815152-05d2-4094-84d3-f0eea9200d5f"])
+    decrypted = await async_local_client.secret_decrypt(encrypted)
+    assert decrypted == secret
+
+async def test_async_store_add_remove(async_local_client: AsyncClient):
+    local_conn = (await async_local_client.store_query(stores="local machine"))[0]
+    if response := (await async_local_client.store_query(stores="local machine/services/xpipe_api_test")):
+        await async_local_client.store_remove(response[0])
+        assert not (await async_local_client.store_query(stores="local machine/services/xpipe_api_test"))
+    conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": local_conn, "serviceProtocolType" : {
         "type" : "http",
         "path" : None
     }}
-    test_uuid = await async_local_client.connection_add("xpipe_api_test", conn_data)
-    assert (await async_local_client.connection_query(connections="local machine/services/xpipe_api_test"))
-    await async_local_client.connection_remove(test_uuid)
-    assert not (await async_local_client.connection_query(connections="local machine/services/xpipe_api_test"))
+    test_uuid = await async_local_client.store_add("xpipe_api_test", conn_data)
+    assert (await async_local_client.store_query(stores="local machine/services/xpipe_api_test"))
+    await async_local_client.store_remove(test_uuid)
+    assert not (await async_local_client.store_query(stores="local machine/services/xpipe_api_test"))
 
 
 def test_action(sync_local_client: Client):
     conn = 'f0ec68aa-63f5-405c-b178-9a4454556d6b'
     data = {
         "ref": conn,
-        "id": "launch"
+        "id": "open"
     }
     sync_local_client.action(data, False)
 
@@ -151,55 +163,55 @@ async def test_async_action(async_local_client: AsyncClient):
     conn = 'f0ec68aa-63f5-405c-b178-9a4454556d6b'
     data = {
         "ref": conn,
-        "id": "launch"
+        "id": "open"
     }
     await async_local_client.action(data, False)
 
 
-def test_connection_toggle(sync_local_client: Client):
-    local_conn = sync_local_client.connection_query(connections="local machine")[0]
-    conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}, "serviceProtocolType" : {
+def test_store_toggle(sync_local_client: Client):
+    local_conn = sync_local_client.store_query(stores="local machine")[0]
+    conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": local_conn, "serviceProtocolType" : {
         "type" : "http",
         "path" : None
     }}
-    conn_uuid = sync_local_client.connection_add(name="xpipe_api_test", conn_data=conn_data)
+    conn_uuid = sync_local_client.store_add(name="xpipe_api_test", conn_data=conn_data)
     sync_local_client.action({"id": "toggleStore", "enabled": True, "ref": conn_uuid}, False)
     sync_local_client.action({"id": "toggleStore", "enabled": False, "ref": conn_uuid}, False)
-    sync_local_client.connection_remove(conn_uuid)
+    sync_local_client.store_remove(conn_uuid)
 
 
-async def test_sync_connection_toggle(async_local_client: AsyncClient):
-    local_conn = (await async_local_client.connection_query(connections="local machine"))[0]
-    conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": {"storeId": local_conn}, "serviceProtocolType" : {
+async def test_sync_store_toggle(async_local_client: AsyncClient):
+    local_conn = (await async_local_client.store_query(stores="local machine"))[0]
+    conn_data = {"type": "customService", "remotePort": 65535, "localPort": 65535, "host": local_conn, "serviceProtocolType" : {
         "type" : "http",
         "path" : None
     }}
-    conn_uuid = await async_local_client.connection_add(name="xpipe_api_test", conn_data=conn_data)
+    conn_uuid = await async_local_client.store_add(name="xpipe_api_test", conn_data=conn_data)
     await async_local_client.action({"id": "toggleStore", "enabled": True, "ref": conn_uuid}, False)
     await async_local_client.action({"id": "toggleStore", "enabled": False, "ref": conn_uuid}, False)
-    await async_local_client.connection_remove(conn_uuid)
+    await async_local_client.store_remove(conn_uuid)
 
 
-def test_connection_refresh(sync_local_client: Client):
-    local_conn = sync_local_client.connection_query(connections="local machine")[0]
-    # We just want to make sure we don't get any HTTP errors when refreshing the connection
-    sync_local_client.connection_refresh(local_conn)
+def test_store_refresh(sync_local_client: Client):
+    local_conn = sync_local_client.store_query(stores="local machine")[0]
+    # We just want to make sure we don't get any HTTP errors when refreshing the store
+    sync_local_client.store_refresh(local_conn)
 
 
-async def test_async_connection_refresh(async_local_client: AsyncClient):
-    local_conn = (await async_local_client.connection_query(connections="local machine"))[0]
-    # We just want to make sure we don't get any HTTP errors when refreshing the connection
-    await async_local_client.connection_refresh(local_conn)
+async def test_async_store_refresh(async_local_client: AsyncClient):
+    local_conn = (await async_local_client.store_query(stores="local machine"))[0]
+    # We just want to make sure we don't get any HTTP errors when refreshing the store
+    await async_local_client.store_refresh(local_conn)
 
 
-def test_get_connections(sync_local_client: Client):
-    local_info = sync_local_client.get_connections(connections="local machine")[0]
+def test_get_stores(sync_local_client: Client):
+    local_info = sync_local_client.get_stores(stores="local machine")[0]
     assert local_info["type"] == "local"
     assert local_info["usageCategory"] == "shell"
 
 
-async def test_async_get_connections(async_local_client: AsyncClient):
-    local_info = (await async_local_client.get_connections(connections="local machine"))[0]
+async def test_async_get_stores(async_local_client: AsyncClient):
+    local_info = (await async_local_client.get_stores(stores="local machine"))[0]
     assert local_info["type"] == "local"
     assert local_info["usageCategory"] == "shell"
 
@@ -215,45 +227,45 @@ async def test_async_daemon_version(async_local_client: AsyncClient):
 
 
 def test_shell_start(sync_local_client: Client):
-    local_connection = sync_local_client.connection_query(connections="local machine")[0]
-    response = sync_local_client.shell_start(local_connection)
+    local_store = sync_local_client.store_query(stores="local machine")[0]
+    response = sync_local_client.shell_start(local_store)
     assert set(response.keys()) == {"shellDialect", "osType", "osName", "ttyState", "temp"}
 
 
 async def test_async_shell_start(async_local_client: AsyncClient):
-    connections = await async_local_client.connection_query(connections="local machine")
-    local_connection = connections[0]
-    response = await async_local_client.shell_start(local_connection)
+    stores = await async_local_client.store_query(stores="local machine")
+    local_store = stores[0]
+    response = await async_local_client.shell_start(local_store)
     assert set(response.keys()) == {"shellDialect", "osType", "osName", "ttyState", "temp"}
 
 
 def test_shell_stop(sync_local_client: Client):
-    local_connection = sync_local_client.connection_query(connections="local machine")[0]
-    sync_local_client.shell_start(local_connection)
-    sync_local_client.shell_stop(local_connection)
+    local_store = sync_local_client.store_query(stores="local machine")[0]
+    sync_local_client.shell_start(local_store)
+    sync_local_client.shell_stop(local_store)
 
 
 async def test_async_shell_stop(async_local_client: AsyncClient):
-    connections = await async_local_client.connection_query(connections="local machine")
-    local_connection = connections[0]
-    await async_local_client.shell_start(local_connection)
-    await async_local_client.shell_stop(local_connection)
+    stores = await async_local_client.store_query(stores="local machine")
+    local_store = stores[0]
+    await async_local_client.shell_start(local_store)
+    await async_local_client.shell_stop(local_store)
 
 
 def test_shell_exec(sync_local_client: Client):
-    local_connection = sync_local_client.connection_query(connections="local machine")[0]
-    sync_local_client.shell_start(local_connection)
-    retval = sync_local_client.shell_exec(local_connection, "echo hello world")
+    local_store = sync_local_client.store_query(stores="local machine")[0]
+    sync_local_client.shell_start(local_store)
+    retval = sync_local_client.shell_exec(local_store, "echo hello world")
     assert retval == {'exitCode': 0, "stdout": "hello world", "stderr": ""}
-    sync_local_client.shell_stop(local_connection)
+    sync_local_client.shell_stop(local_store)
 
 
 async def test_async_shell_exec(async_local_client: AsyncClient):
-    local_connection = (await async_local_client.connection_query(connections="local machine"))[0]
-    await async_local_client.shell_start(local_connection)
-    retval = await async_local_client.shell_exec(local_connection, "echo hello world")
+    local_store = (await async_local_client.store_query(stores="local machine"))[0]
+    await async_local_client.shell_start(local_store)
+    retval = await async_local_client.shell_exec(local_store, "echo hello world")
     assert retval == {'exitCode': 0, "stdout": "hello world", "stderr": ""}
-    await async_local_client.shell_stop(local_connection)
+    await async_local_client.shell_stop(local_store)
 
 
 def test_fs_blob(sync_local_client: Client):
@@ -267,86 +279,86 @@ async def test_async_fs_blob(async_local_client: AsyncClient):
 
 
 def test_fs_write(sync_local_client: Client):
-    connection = sync_local_client.connection_query(connections="local machine")[0]
+    store = sync_local_client.store_query(stores="local machine")[0]
     blob = sync_local_client.fs_blob("test")
-    system_info = sync_local_client.shell_start(connection)
+    system_info = sync_local_client.shell_start(store)
     testfile_path = Path(system_info["temp"]) / "xpipe_testfile"
     try:
-        sync_local_client.fs_write(connection, blob, str(testfile_path.resolve()))
-        sync_local_client.shell_stop(connection)
+        sync_local_client.fs_write(store, blob, str(testfile_path.resolve()))
+        sync_local_client.shell_stop(store)
         assert testfile_path.read_text() == "test"
     finally:
         testfile_path.unlink(missing_ok=True)
 
 
 async def test_async_fs_write(async_local_client: AsyncClient):
-    connection = (await async_local_client.connection_query(connections="local machine"))[0]
+    store = (await async_local_client.store_query(stores="local machine"))[0]
     blob = await async_local_client.fs_blob("test")
-    system_info = await async_local_client.shell_start(connection)
+    system_info = await async_local_client.shell_start(store)
     testfile_path = Path(system_info["temp"]) / "xpipe_testfile"
     try:
-        await async_local_client.fs_write(connection, blob, str(testfile_path.resolve()))
-        await async_local_client.shell_stop(connection)
+        await async_local_client.fs_write(store, blob, str(testfile_path.resolve()))
+        await async_local_client.shell_stop(store)
         assert testfile_path.read_text() == "test"
     finally:
         testfile_path.unlink(missing_ok=True)
 
 
 def test_fs_script(sync_local_client: Client):
-    connection = sync_local_client.connection_query(connections="local machine")[0]
-    system_info = sync_local_client.shell_start(connection)
+    store = sync_local_client.store_query(stores="local machine")[0]
+    system_info = sync_local_client.shell_start(store)
     if system_info["osType"] == "Windows":
         script = "echo hello world"
     else:
         script = "echo hello world"
     blob = sync_local_client.fs_blob(script)
-    script_path = sync_local_client.fs_script(connection, blob)
+    script_path = sync_local_client.fs_script(store, blob)
     try:
-        output = sync_local_client.shell_exec(connection, f'"{script_path}"')
+        output = sync_local_client.shell_exec(store, f'"{script_path}"')
         assert output["stdout"].strip() == "hello world"
-        sync_local_client.shell_stop(connection)
+        sync_local_client.shell_stop(store)
     finally:
         Path(script_path).unlink(missing_ok=True)
 
 
 async def test_async_fs_script(async_local_client: AsyncClient):
-    connection = (await async_local_client.connection_query(connections="local machine"))[0]
-    system_info = await async_local_client.shell_start(connection)
+    store = (await async_local_client.store_query(stores="local machine"))[0]
+    system_info = await async_local_client.shell_start(store)
     if system_info["osType"] == "Windows":
         script = "echo hello world"
     else:
         script = "echo hello world"
     blob = await async_local_client.fs_blob(script)
-    script_path = await async_local_client.fs_script(connection, blob)
+    script_path = await async_local_client.fs_script(store, blob)
     try:
-        output = await async_local_client.shell_exec(connection, f'"{script_path}"')
+        output = await async_local_client.shell_exec(store, f'"{script_path}"')
         assert output["stdout"].strip() == "hello world"
-        await async_local_client.shell_stop(connection)
+        await async_local_client.shell_stop(store)
     finally:
         Path(script_path).unlink(missing_ok=True)
 
 
 def test_fs_read(sync_local_client: Client):
-    connection = sync_local_client.connection_query(connections="local machine")[0]
-    system_info = sync_local_client.shell_start(connection)
+    store = sync_local_client.store_query(stores="local machine")[0]
+    system_info = sync_local_client.shell_start(store)
     testfile_path = Path(system_info["temp"]) / "xpipe_testfile"
     try:
         testfile_path.write_text("test")
-        file_bytes = sync_local_client.fs_read(connection, str(testfile_path.resolve()))
+        file_bytes = sync_local_client.fs_read(store, str(testfile_path.resolve()))
         assert file_bytes.decode('utf-8') == "test"
-        sync_local_client.shell_stop(connection)
+        sync_local_client.shell_stop(store)
     finally:
         testfile_path.unlink(missing_ok=True)
 
 
 async def test_async_fs_read(async_local_client: AsyncClient):
-    connection = (await async_local_client.connection_query(connections="local machine"))[0]
-    system_info = await async_local_client.shell_start(connection)
+    store = (await async_local_client.store_query(stores="local machine"))[0]
+    system_info = await async_local_client.shell_start(store)
     testfile_path = Path(system_info["temp"]) / "xpipe_testfile"
     try:
         testfile_path.write_text("test")
-        file_bytes = await async_local_client.fs_read(connection, str(testfile_path.resolve()))
+        file_bytes = await async_local_client.fs_read(store, str(testfile_path.resolve()))
         assert file_bytes.decode('utf-8') == "test"
-        await async_local_client.shell_stop(connection)
+        await async_local_client.shell_stop(store)
     finally:
         testfile_path.unlink(missing_ok=True)

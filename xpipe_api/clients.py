@@ -115,28 +115,28 @@ class Client:
     def get(self, *args, **kwargs) -> bytes:
         return self._get(*args, **kwargs).content
 
-    def connection_query(self, categories: str = "**", connections: str = "**", types: str = "*") -> List[str]:
-        endpoint = f"{self.base_url}/connection/query"
-        data = {"categoryFilter": categories, "connectionFilter": connections, "typeFilter": types}
+    def store_query(self, categories: str = "**", stores: str = "**", types: str = "*") -> List[str]:
+        endpoint = f"{self.base_url}/store/query"
+        data = {"categoryFilter": categories, "storeFilter": stores, "typeFilter": types}
         response = self.post(endpoint, json=data)
         return json.loads(response).get("found", [])
 
-    def connection_info(self, uuids: Union[str, List[str]]) -> List[dict]:
-        endpoint = f"{self.base_url}/connection/info"
+    def store_info(self, uuids: Union[str, List[str]]) -> List[dict]:
+        endpoint = f"{self.base_url}/store/info"
         # If we're passed a single UUID, wrap it in a list like the API expects
         if not isinstance(uuids, list):
             uuids = [uuids]
-        data = {"connections": uuids}
+        data = {"stores": uuids}
         response = self.post(endpoint, json=data)
         return json.loads(response).get("infos", [])
 
-    def connection_add(self, name: str, conn_data: dict, validate: bool = False, category: str = None) -> str:
-        endpoint = f"{self.base_url}/connection/add"
+    def store_add(self, name: str, conn_data: dict, validate: bool = False, category: str = None) -> str:
+        endpoint = f"{self.base_url}/store/add"
         data = {"name": name, "data": conn_data, "validate": validate}
         if category:
             data["category"] = category
         response = self.post(endpoint, json=data)
-        return json.loads(response)["connection"]
+        return json.loads(response)["store"]
 
     def category_add(self, name: str, parent: str) -> str:
         endpoint = f"{self.base_url}/category/add"
@@ -166,22 +166,22 @@ class Client:
         data = {"categories": uuids, "removeChildrenCategories": remove_children_categories, "removeContents": remove_contents}
         self.post(endpoint, json=data)
 
-    def connection_remove(self, uuids: Union[str, List[str]]):
-        endpoint = f"{self.base_url}/connection/remove"
+    def store_remove(self, uuids: Union[str, List[str]]):
+        endpoint = f"{self.base_url}/store/remove"
         if not isinstance(uuids, list):
             uuids = [uuids]
-        data = {"connections": uuids}
+        data = {"stores": uuids}
         self.post(endpoint, json=data)
 
-    def connection_refresh(self, connection: str):
-        endpoint = f"{self.base_url}/connection/refresh"
-        data = {"connection": connection}
+    def store_refresh(self, store: str):
+        endpoint = f"{self.base_url}/store/refresh"
+        data = {"store": store}
         self.post(endpoint, json=data)
 
-    def get_connections(self, categories: str = "**", connections: str = "**", types: str = "*") -> List[dict]:
-        """Convenience method to chain connection/query with connection/info"""
-        uuids = self.connection_query(categories, connections, types)
-        return self.connection_info(uuids) if uuids else []
+    def get_stores(self, categories: str = "**", stores: str = "**", types: str = "*") -> List[dict]:
+        """Convenience method to chain store/query with store/info"""
+        uuids = self.store_query(categories, stores, types)
+        return self.store_info(uuids) if uuids else []
 
     def daemon_version(self) -> dict:
         endpoint = f"{self.base_url}/daemon/version"
@@ -190,18 +190,18 @@ class Client:
 
     def shell_start(self, conn_uuid: str) -> dict:
         endpoint = f"{self.base_url}/shell/start"
-        data = {"connection": conn_uuid}
+        data = {"store": conn_uuid}
         response = self.post(endpoint, json=data)
         return json.loads(response) if response else {}
 
     def shell_stop(self, conn_uuid: str):
         endpoint = f"{self.base_url}/shell/stop"
-        data = {"connection": conn_uuid}
+        data = {"store": conn_uuid}
         self.post(endpoint, json=data)
 
     def shell_exec(self, conn_uuid: str, command: str) -> dict:
         endpoint = f"{self.base_url}/shell/exec"
-        data = {"connection": conn_uuid, "command": command}
+        data = {"store": conn_uuid, "command": command}
         response = self.post(endpoint, json=data)
         return json.loads(response) if response else {}
 
@@ -212,35 +212,40 @@ class Client:
         response = self.post(endpoint, data=blob_data)
         return json.loads(response)["blob"]
 
-    def fs_write(self, connection: str, blob: str, path: str):
+    def fs_write(self, store: str, blob: str, path: str):
         endpoint = f"{self.base_url}/fs/write"
-        data = {"connection": connection, "blob": blob, "path": path}
+        data = {"store": store, "blob": blob, "path": path}
         self.post(endpoint, json=data)
 
-    def fs_script(self, connection: str, blob: str) -> str:
+    def fs_script(self, store: str, blob: str) -> str:
         endpoint = f"{self.base_url}/fs/script"
-        data = {"connection": connection, "blob": blob}
+        data = {"store": store, "blob": blob}
         response = self.post(endpoint, json=data)
         return json.loads(response)["path"]
 
-    def _fs_read(self, connection: str, path: str) -> requests.Response:
+    def _fs_read(self, store: str, path: str) -> requests.Response:
         # Internal version of the function that returns the raw response object
         # Here so clients can do things like stream the response to disk if it's a big file
         endpoint = f"{self.base_url}/fs/read"
-        data = {"connection": connection, "path": path}
+        data = {"store": store, "path": path}
         return self._post(endpoint, json=data, stream=True)
 
-    def fs_read(self, connection: str, path: str) -> bytes:
-        return self._fs_read(connection, path).content
+    def fs_read(self, store: str, path: str) -> bytes:
+        return self._fs_read(store, path).content
 
     def action(self, action_data: dict, confirm: bool):
         endpoint = f"{self.base_url}/action"
         data = {"action": action_data, "confirm": confirm}
         self.post(endpoint, json=data)
 
-    def secret_encrypt(self, secret: str):
+    def secret_encrypt_default(self, secret: str):
         endpoint = f"{self.base_url}/secret/encrypt"
         data = {"value": secret}
+        return json.loads(self.post(endpoint, json=data))["encrypted"]
+
+    def secret_encrypt(self, secret: str, principals: List[str]):
+        endpoint = f"{self.base_url}/secret/encrypt"
+        data = {"value": secret, "principals": principals}
         return json.loads(self.post(endpoint, json=data))["encrypted"]
 
     def secret_decrypt(self, encrypted: dict):
@@ -334,28 +339,28 @@ class AsyncClient(Client):
         resp = await self._get(*args, **kwargs)
         return await resp.read()
 
-    async def connection_query(self, categories: str = "**", connections: str = "**", types: str = "*") -> List[str]:
-        endpoint = f"{self.base_url}/connection/query"
-        data = {"categoryFilter": categories, "connectionFilter": connections, "typeFilter": types}
+    async def store_query(self, categories: str = "**", stores: str = "**", types: str = "*") -> List[str]:
+        endpoint = f"{self.base_url}/store/query"
+        data = {"categoryFilter": categories, "storeFilter": stores, "typeFilter": types}
         response = await self.post(endpoint, json=data)
         return json.loads(response).get("found", [])
 
-    async def connection_info(self, uuids: Union[str, List[str]]) -> List[dict]:
-        endpoint = f"{self.base_url}/connection/info"
+    async def store_info(self, uuids: Union[str, List[str]]) -> List[dict]:
+        endpoint = f"{self.base_url}/store/info"
         # If we're passed a single UUID, wrap it in a list like the API expects
         if not isinstance(uuids, list):
             uuids = [uuids]
-        data = {"connections": uuids}
+        data = {"stores": uuids}
         response = await self.post(endpoint, json=data)
         return json.loads(response).get("infos", [])
 
-    async def connection_add(self, name: str, conn_data: dict, validate: bool = False, category: str = None) -> str:
-        endpoint = f"{self.base_url}/connection/add"
+    async def store_add(self, name: str, conn_data: dict, validate: bool = False, category: str = None) -> str:
+        endpoint = f"{self.base_url}/store/add"
         data = {"name": name, "data": conn_data, "validate": validate}
         if category:
             data["category"] = category
         response = await self.post(endpoint, json=data)
-        return json.loads(response)["connection"]
+        return json.loads(response)["store"]
 
     async def category_add(self, name: str, parent: str) -> str:
         endpoint = f"{self.base_url}/category/add"
@@ -385,21 +390,21 @@ class AsyncClient(Client):
         data = {"categories": uuids, "removeChildrenCategories": remove_children_categories, "removeContents": remove_contents}
         await self.post(endpoint, json=data)
 
-    async def connection_remove(self, uuids: Union[str, List[str]]):
-        endpoint = f"{self.base_url}/connection/remove"
+    async def store_remove(self, uuids: Union[str, List[str]]):
+        endpoint = f"{self.base_url}/store/remove"
         if not isinstance(uuids, list):
             uuids = [uuids]
-        data = {"connections": uuids}
+        data = {"stores": uuids}
         await self.post(endpoint, json=data)
 
-    async def connection_refresh(self, connection: str):
-        endpoint = f"{self.base_url}/connection/refresh"
-        data = {"connection": connection}
+    async def store_refresh(self, store: str):
+        endpoint = f"{self.base_url}/store/refresh"
+        data = {"store": store}
         await self.post(endpoint, json=data)
 
-    async def get_connections(self, categories: str = "**", connections: str = "**", types: str = "*") -> List[dict]:
-        uuids = await self.connection_query(categories, connections, types)
-        return (await self.connection_info(uuids)) if uuids else []
+    async def get_stores(self, categories: str = "**", stores: str = "**", types: str = "*") -> List[dict]:
+        uuids = await self.store_query(categories, stores, types)
+        return (await self.store_info(uuids)) if uuids else []
 
     async def daemon_version(self) -> dict:
         endpoint = f"{self.base_url}/daemon/version"
@@ -408,18 +413,18 @@ class AsyncClient(Client):
 
     async def shell_start(self, conn_uuid: str) -> dict:
         endpoint = f"{self.base_url}/shell/start"
-        data = {"connection": conn_uuid}
+        data = {"store": conn_uuid}
         response = await self.post(endpoint, json=data)
         return json.loads(response) if response else {}
 
     async def shell_stop(self, conn_uuid: str):
         endpoint = f"{self.base_url}/shell/stop"
-        data = {"connection": conn_uuid}
+        data = {"store": conn_uuid}
         await self.post(endpoint, json=data)
 
     async def shell_exec(self, conn_uuid: str, command: str) -> dict:
         endpoint = f"{self.base_url}/shell/exec"
-        data = {"connection": conn_uuid, "command": command}
+        data = {"store": conn_uuid, "command": command}
         response = await self.post(endpoint, json=data)
         return json.loads(response)
 
@@ -430,27 +435,27 @@ class AsyncClient(Client):
         response = await self.post(endpoint, data=blob_data)
         return json.loads(response)["blob"]
 
-    async def fs_write(self, connection: str, blob: str, path: str):
+    async def fs_write(self, store: str, blob: str, path: str):
         endpoint = f"{self.base_url}/fs/write"
-        data = {"connection": connection, "blob": blob, "path": path}
+        data = {"store": store, "blob": blob, "path": path}
         await self.post(endpoint, json=data)
 
-    async def fs_script(self, connection: str, blob: str) -> str:
+    async def fs_script(self, store: str, blob: str) -> str:
         endpoint = f"{self.base_url}/fs/script"
-        data = {"connection": connection, "blob": blob}
+        data = {"store": store, "blob": blob}
         response = await self.post(endpoint, json=data)
         return json.loads(response)["path"]
 
-    async def _fs_read(self, connection: str, path: str) -> aiohttp.ClientResponse:
+    async def _fs_read(self, store: str, path: str) -> aiohttp.ClientResponse:
         # Internal version of the function that returns the raw response object
         # Here so clients can do things like stream the response to disk if it's a big file
         endpoint = f"{self.base_url}/fs/read"
-        data = {"connection": connection, "path": path}
+        data = {"store": store, "path": path}
         resp = await self._post(endpoint, json=data)
         return resp
 
-    async def fs_read(self, connection: str, path: str) -> bytes:
-        resp = await self._fs_read(connection, path)
+    async def fs_read(self, store: str, path: str) -> bytes:
+        resp = await self._fs_read(store, path)
         return await resp.read()
 
     async def action(self, action_data: dict, confirm: bool):
@@ -459,9 +464,14 @@ class AsyncClient(Client):
         response = await self.post(endpoint, json=data)
         return response
 
-    async def secret_encrypt(self, secret: str):
+    async def secret_encrypt_default(self, secret: str):
         endpoint = f"{self.base_url}/secret/encrypt"
         data = {"value": secret}
+        return json.loads(await self.post(endpoint, json=data))["encrypted"]
+
+    async def secret_encrypt(self, secret: str, principals: List[str]):
+        endpoint = f"{self.base_url}/secret/encrypt"
+        data = {"value": secret, "principals": principals}
         return json.loads(await self.post(endpoint, json=data))["encrypted"]
 
     async def secret_decrypt(self, encrypted: dict):

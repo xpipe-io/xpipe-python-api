@@ -9,7 +9,7 @@ Python client for the XPipe API. This library is a wrapper for the raw [HTTP API
 python3 -m pip install xpipe_api
 ```
 
-You can find the documentation at https://docs.xpipe.io/guide/python-api.
+You can find the documentation at https://docs.xpipe.io/guide/python-api. Complementary to the documentation, you can find the code examples from the docs in `samples`.
 
 ## Development
 

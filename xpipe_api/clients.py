@@ -25,11 +25,11 @@ class Client:
     def __init__(
         self, token: Optional[str] = None, base_url: Optional[str] = None, ptb: bool = False, raise_errors: bool = True
     ):
-        auth_type = "ApiKey"
+        auth_type = "apiKey"
         # Try getting the auth from the local filesystem if none is provided
         if not token:
             try:
-                auth_type = "Local"
+                auth_type = "local"
                 auth_dir = "xpipe-ptb" if ptb else "xpipe"
                 # Look for Windows or Mac env vars for tmpdir, fall back to /tmp if they don't exist
                 auth_file = Path(os.getenv("TEMP") or os.getenv("TMPDIR") or "/tmp") / auth_dir / os.getenv("USER") / "beacon-auth" if platform == "linux" else Path(os.getenv("TEMP") or os.getenv("TMPDIR") or "/tmp") / auth_dir / "beacon-auth"
@@ -52,11 +52,11 @@ class Client:
         self.raise_errors = raise_errors
 
     def renew_session(self):
-        if self.auth_type == "ApiKey":
+        if self.auth_type == "apiKey":
             auth = {"type": self.auth_type, "key": self.token}
         else:
             auth = {"type": self.auth_type, "authFileContent": self.token}
-        data = {"auth": auth, "client": {"type": "Api", "name": "python_xpipe_api"}}
+        data = {"auth": auth, "client": {"type": "api", "name": "python_xpipe_api"}}
         result = requests.post(f"{self.base_url}/handshake", json=data)
         response = result.json()
         session = response.get("sessionToken", None)
@@ -262,11 +262,11 @@ class AsyncClient(Client):
         return async_client
 
     async def renew_session(self):
-        if self.auth_type == "ApiKey":
+        if self.auth_type == "apiKey":
             auth = {"type": self.auth_type, "key": self.token}
         else:
             auth = {"type": self.auth_type, "authFileContent": self.token}
-        data = {"auth": auth, "client": {"type": "Api", "name": "python_xpipe_api"}}
+        data = {"auth": auth, "client": {"type": "api", "name": "python_xpipe_api"}}
 
         resp = await async_requests.post(f"{self.base_url}/handshake", json=data)
         parsed = await resp.json(content_type=None)
